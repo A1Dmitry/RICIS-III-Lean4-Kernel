@@ -30,6 +30,7 @@ lake build
 If you use this kernel or the RICIS-III framework, please cite:
 - Software: [10.5281/zenodo.21529989](https://doi.org)
 - Theory: [10.5281/zenodo.21517353](https://doi.org)
+- Online calculatir with AI Assistant: [https://remix-ricis-iii-501343051156.europe-west2.run.app]
 
 ## ⚖️ License
 MIT License.
