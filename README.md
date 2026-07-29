@@ -23,6 +23,8 @@ cd RICIS-III-Lean4-Kernel
 
 # Build the project and verify all theorems
 lake build
+or
+lean --make Ricis3.Release.lean
 ```
 
 ## 📑 Related Works & Citations
