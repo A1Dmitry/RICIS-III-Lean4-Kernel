@@ -1,54 +1,39 @@
-# RICIS-III Formal Kernel (v10.0.13)
+# RICIS-III Formal Kernel (v10.1.0)
 
 MIT License | Lean 4 | DOI: 10.5281/zenodo.18116204
 
-## OVERVIEW
-
-Machine-verified formal kernel of RICIS-III
-(Recursive Indexed Calculus of Identity and Singularity) in Lean 4.
+## Theory-faithful kernel (v7.7)
 
 **Identity = SemanticType + Normalize(Expr)**
 
-## CORE (v10.0.13)
+### Safety Protocols
 
-| Component | Description |
-|-----------|-------------|
-| Expr | AST (const, var, add, mul, sub, div) |
-| SemanticType | arithmetic \| field \| geometry \| topology \| singularity |
-| Identity | hash + canonical (normalizeExpr) |
-| InstanceCounter / RICISState | instance IDs |
-| Index | identity, instanceId, expr, name, semanticType |
-| Monolith | const, expr, expr_idx, value_idx, value_expr_idx, lazy_zero, lazy_inf, unresolved |
-| ricis_div / ricis_mul | classical_div + singular_div |
-| evalAll | Classical \| RICIS modes |
+| SP | Rule | In code |
+|----|------|---------|
+| SP2 | Clean first | `sp2_reduce` |
+| SP3 | 0_F/0_G = F/G | identity check |
+| SP4 | Index by expression | `Index.expr` |
 
-## KEY PROPERTY
+### Axioms
 
-Same semantic identity (hash) can have different instanceIds:
+- **A4**: `0_F/0_G = 1` iff same Identity, else `F/G`
+- **A5**: same for ∞
+- **A6**: `0_F × ∞_G = F·G`
 
-```lean
-#reduce idx1.identity.hash = idx2.identity.hash  -- true
-#reduce idx1.instanceId = idx2.instanceId        -- false
-```
-
-## TESTS
+### Theorem
 
 ```lean
-#reduce ricis_div (const 5) (const 0)
-#reduce ricis_div (lazy_zero ...) (lazy_zero ...)  -- → const 1
+theorem zero_div_same_identity (idx : Index) :
+  singular_div (lazy_zero idx) (lazy_zero idx) = const 1
 ```
 
-## Build
+### Not any two zeros → 1
 
-```bash
-git clone https://github.com/A1Dmitry/RICIS-III-Lean4-Kernel.git
-cd RICIS-III-Lean4-Kernel
-lean --make Ricis3.Release.lean
+```lean
+#reduce singular_div (lazy_zero z_{x-2}) (lazy_zero z_{x+2})
+-- → expr (div (x-2) (x+2))
 ```
 
-## Author
+### Author
 
-Dmitry Aleynikov  
-ORCID: 0009-0004-3226-7700  
-DOI: 10.5281/zenodo.18116204  
-License: MIT
+Dmitry Aleynikov · ORCID 0009-0004-3226-7700

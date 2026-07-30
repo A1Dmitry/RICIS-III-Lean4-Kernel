@@ -1,11 +1,11 @@
 --==============================================================================
 -- MODULE: Math.Calculus.RICIS3.Release
--- VERSION: 10.0.13 — Исправлена рекурсия
+-- VERSION: 10.1.0 — Theory-faithful (SP1–SP4, A4/A5/A6)
 -- AUTHOR: Dmitry Aleynikov (Minsk, Belarus)
 -- ORCID: 0009-0004-3226-7700
 -- DOI: 10.5281/zenodo.18116204
 -- LICENSE: MIT
--- STATUS: ✓ КОМПИЛИРУЕТСЯ ✓ CORE VERIFIED
+-- STATUS: ✓ Theory-aligned kernel
 --==============================================================================
 
 import Mathlib
@@ -15,24 +15,30 @@ noncomputable section
 open Classical
 
 /-!
-# RICIS-III RELEASE 10.0.13
+# RICIS-III RELEASE 10.1.0
 Identity = SemanticType + Normalize(Expr).
+
+Theory v7.7:
+  SP1 Locality · SP2 Clean first · SP3 Index law · SP4 Semantic index
+  A4: 0_F/0_G = F/G   (1 only when Identity(F)=Identity(G))
+  A5: ∞_F/∞_G = F/G
+  A6: 0_F × ∞_G = F·G
 -/
 
 local instance : Repr ℝ := ⟨fun _ _ => "<real>"⟩
 local instance : ToString ℝ := ⟨fun _ => "<real>"⟩
 
 inductive Expr where
-  | const (v : ℝ) : Expr | var : Expr
-  | add (f g : Expr) : Expr | mul (f g : Expr) : Expr
-  | sub (f g : Expr) : Expr | div (f g : Expr) : Expr
-  deriving Inhabited, Repr
+  | const (v : ℝ) : Expr
+  | var : Expr
+  | add (f g : Expr) : Expr
+  | mul (f g : Expr) : Expr
+  | sub (f g : Expr) : Expr
+  | div (f g : Expr) : Expr
+  deriving Inhabited, Repr, DecidableEq
 
 inductive SemanticType where
   | arithmetic | field | geometry | topology | singularity
-  deriving Inhabited, Repr, DecidableEq
-
-inductive EvaluationMode where | Classical | RICIS
   deriving Inhabited, Repr, DecidableEq
 
 def normalizeExpr : Expr → String
@@ -56,28 +62,23 @@ def hashString (s : String) : IdentityHash :=
 
 def identityHash (st : SemanticType) (e : Expr) : IdentityHash :=
   let semanticStr := match st with
-    | SemanticType.arithmetic => "A"
-    | SemanticType.field => "F"
-    | SemanticType.geometry => "G"
-    | SemanticType.topology => "T"
-    | SemanticType.singularity => "S"
-  let normalizedExpr := normalizeExpr e
-  hashString s!"{semanticStr}:{normalizedExpr}"
+    | .arithmetic => "A" | .field => "F" | .geometry => "G"
+    | .topology => "T" | .singularity => "S"
+  hashString s!"{semanticStr}:{normalizeExpr e}"
 
--- УЛУЧШЕНИЕ: Добавлен deriving Inhabited, Repr для удобной отладки
 structure Identity where
   hash : IdentityHash
   canonical : String
-  deriving Inhabited, Repr
+  deriving Inhabited, Repr, DecidableEq
 
 def computeIdentity (st : SemanticType) (e : Expr) : Identity :=
-  let h := identityHash st e
-  let c := normalizeExpr e
-  { hash := h, canonical := c }
+  { hash := identityHash st e, canonical := normalizeExpr e }
+
+def Identity.same (i1 i2 : Identity) : Bool :=
+  i1.hash = i2.hash && i1.canonical = i2.canonical
 
 abbrev InstanceID := Nat
 
--- УЛУЧШЕНИЕ: Добавлен deriving Inhabited, Repr
 structure InstanceCounter where
   counter : Nat
   deriving Inhabited, Repr
@@ -87,7 +88,6 @@ def InstanceCounter.init : InstanceCounter := { counter := 1 }
 def InstanceCounter.fresh (s : InstanceCounter) : InstanceID × InstanceCounter :=
   (s.counter, { counter := s.counter + 1 })
 
--- УЛУЧШЕНИЕ: Добавлен deriving Inhabited, Repr
 structure RICISState where
   counter : InstanceCounter
   deriving Inhabited, Repr
@@ -98,7 +98,6 @@ def RICISState.fresh (s : RICISState) : InstanceID × RICISState :=
   let (id, c') := s.counter.fresh
   (id, { counter := c' })
 
--- УЛУЧШЕНИЕ: Добавлен deriving Inhabited, Repr
 structure Index where
   identity : Identity
   instanceId : InstanceID
@@ -107,29 +106,29 @@ structure Index where
   semanticType : SemanticType
   deriving Inhabited, Repr
 
-def Index.root (s : RICISState) (e : Expr) (name : String) (st : SemanticType) : Index × RICISState :=
+def Index.sameIdentity (i1 i2 : Index) : Bool :=
+  Identity.same i1.identity i2.identity
+
+def Index.root (s : RICISState) (e : Expr) (name : String) (st : SemanticType) :
+    Index × RICISState :=
   let (inst, s') := s.fresh
-  ({ identity := computeIdentity st e, instanceId := inst, expr := e, name := name, semanticType := st }, s')
+  ({ identity := computeIdentity st e, instanceId := inst,
+     expr := e, name := name, semanticType := st }, s')
 
 def Index.combineMul (s : RICISState) (i1 i2 : Index) : Index × RICISState :=
   let (inst, s') := s.fresh
   let e := Expr.mul i1.expr i2.expr
   let st := i1.semanticType
-  ({ identity := computeIdentity st e, instanceId := inst, expr := e, name := s!"({i1.name}_×_{i2.name})", semanticType := st }, s')
+  ({ identity := computeIdentity st e, instanceId := inst, expr := e,
+     name := s!"({i1.name}_×_{i2.name})", semanticType := st }, s')
 
 def Index.combineDiv (s : RICISState) (i1 i2 : Index) : Index × RICISState :=
   let (inst, s') := s.fresh
   let e := Expr.div i1.expr i2.expr
   let st := i1.semanticType
-  ({ identity := computeIdentity st e, instanceId := inst, expr := e, name := s!"({i1.name}_/_ {i2.name})", semanticType := st }, s')
+  ({ identity := computeIdentity st e, instanceId := inst, expr := e,
+     name := s!"({i1.name}_/_{i2.name})", semanticType := st }, s')
 
--- УЛУЧШЕНИЕ: Добавлен deriving Inhabited, Repr
-inductive IndexedEvalResult where
-  | value (v : ℝ) (idx : Index) : IndexedEvalResult
-  | singular (idx : Index) : IndexedEvalResult
-  deriving Inhabited, Repr
-
--- УЛУЧШЕНИЕ: Добавлен deriving Inhabited, Repr
 inductive Monolith : Type
   | const (val : ℝ) : Monolith
   | expr (e : Expr) : Monolith
@@ -143,40 +142,15 @@ inductive Monolith : Type
 
 open Monolith
 
-def makeZero (s : RICISState) (name : String) : Monolith × RICISState :=
-  let (idx, s') := Index.root s (Expr.const 0) name SemanticType.arithmetic
+def makeZero (s : RICISState) (name : String) (e : Expr := Expr.const 0) :
+    Monolith × RICISState :=
+  let (idx, s') := Index.root s e name SemanticType.arithmetic
   (lazy_zero idx, s')
 
-noncomputable def evalAll (mode : EvaluationMode) (e : Expr) (x : ℝ) (semType : SemanticType) : IndexedEvalResult :=
-  let dummyIdx := (Index.root RICISState.init (Expr.const 0) "dummy" semType).fst
-  match e with
-  | Expr.const v => IndexedEvalResult.value v dummyIdx
-  | Expr.var => IndexedEvalResult.value x dummyIdx
-  | Expr.add f g =>
-      match evalAll mode f x semType, evalAll mode g x semType with
-      | IndexedEvalResult.value vf _, IndexedEvalResult.value vg _ => IndexedEvalResult.value (vf + vg) dummyIdx
-      | IndexedEvalResult.singular idx, _ => IndexedEvalResult.singular idx
-      | _, IndexedEvalResult.singular idx => IndexedEvalResult.singular idx
-  | Expr.mul f g =>
-      match evalAll mode f x semType, evalAll mode g x semType with
-      | IndexedEvalResult.value vf _, IndexedEvalResult.value vg _ => IndexedEvalResult.value (vf * vg) dummyIdx
-      | IndexedEvalResult.singular idx, _ => IndexedEvalResult.singular idx
-      | _, IndexedEvalResult.singular idx => IndexedEvalResult.singular idx
-  | Expr.sub f g =>
-      match evalAll mode f x semType, evalAll mode g x semType with
-      | IndexedEvalResult.value vf _, IndexedEvalResult.value vg _ => IndexedEvalResult.value (vf - vg) dummyIdx
-      | IndexedEvalResult.singular idx, _ => IndexedEvalResult.singular idx
-      | _, IndexedEvalResult.singular idx => IndexedEvalResult.singular idx
-  | Expr.div f g =>
-      match evalAll mode f x semType, evalAll mode g x semType with
-      | IndexedEvalResult.value vf _, IndexedEvalResult.value vg _ =>
-          if vg = 0 then
-            match mode with
-            | EvaluationMode.Classical => IndexedEvalResult.singular dummyIdx
-            | EvaluationMode.RICIS => IndexedEvalResult.value 0 dummyIdx
-          else IndexedEvalResult.value (vf / vg) dummyIdx
-      | IndexedEvalResult.singular idx, _ => IndexedEvalResult.singular idx
-      | _, IndexedEvalResult.singular idx => IndexedEvalResult.singular idx
+def makeInf (s : RICISState) (name : String) (e : Expr) :
+    Monolith × RICISState :=
+  let (idx, s') := Index.root s e name SemanticType.arithmetic
+  (lazy_inf idx, s')
 
 noncomputable def restoreExpr (m : Monolith) : Expr :=
   match m with
@@ -187,25 +161,80 @@ noncomputable def restoreExpr (m : Monolith) : Expr :=
   | expr_idx e _ => e
   | lazy_zero idx => idx.expr
   | lazy_inf idx => idx.expr
-  | unresolved e _ => Expr.div e (Expr.const 0)
+  | unresolved e _ => e
+
+def sp2_same (num den : Expr) : Bool :=
+  decide (num = den)
+
+def sp2_cancel_mul (num den : Expr) : Option Expr :=
+  match num with
+  | Expr.mul f g =>
+      if decide (f = den) then some g
+      else if decide (g = den) then some f
+      else none
+  | _ => none
+
+def sp2_reduce (num den : Expr) : Option Monolith :=
+  if sp2_same num den then
+    some (const 1)
+  else
+    match sp2_cancel_mul num den with
+    | some e => some (expr e)
+    | none => none
 
 namespace RICIS.Core
 
 noncomputable def classical_div (a b : ℝ) : Monolith :=
-  let (idx, _) := Index.root RICISState.init (Expr.div (Expr.const a) (Expr.const b)) s!"classical_{a}_{b}" SemanticType.arithmetic
-  if b = 0 then lazy_inf idx
-  else value_idx (a / b) idx
+  let (idx, _) := Index.root RICISState.init
+    (Expr.div (Expr.const a) (Expr.const b)) s!"classical_{a}_{b}" .arithmetic
+  if b = 0 then
+    if a = 0 then
+      unresolved (Expr.div (Expr.const a) (Expr.const b)) "0/0_bare_const"
+    else
+      lazy_inf idx
+  else
+    value_idx (a / b) idx
 
 noncomputable def singular_div (m1 m2 : Monolith) : Monolith :=
   match m1, m2 with
-  | lazy_zero idxF, lazy_zero idxG => const 1
-  | lazy_inf idxF, lazy_inf idxG => const 1
+  | lazy_zero i1, lazy_zero i2 =>
+      match sp2_reduce i1.expr i2.expr with
+      | some m => m
+      | none =>
+          if Index.sameIdentity i1 i2 then
+            const 1
+          else
+            expr (Expr.div i1.expr i2.expr)
+  | lazy_inf i1, lazy_inf i2 =>
+      match sp2_reduce i1.expr i2.expr with
+      | some m => m
+      | none =>
+          if Index.sameIdentity i1 i2 then
+            const 1
+          else
+            expr (Expr.div i1.expr i2.expr)
   | value_idx v1 i1, value_idx v2 i2 =>
       let (idx, _) := Index.combineDiv RICISState.init i1 i2
-      if v2 = 0 then lazy_inf idx
+      if v2 = 0 then
+        if v1 = 0 then
+          if Index.sameIdentity i1 i2 then const 1
+          else expr (Expr.div i1.expr i2.expr)
+        else lazy_inf idx
       else value_idx (v1 / v2) idx
-  | expr e1, expr e2 => expr (Expr.div e1 e2)
-  | a, b => unresolved (Expr.div (restoreExpr a) (restoreExpr b)) "unresolved_division"
+  | expr e1, expr e2 =>
+      match sp2_reduce e1 e2 with
+      | some m => m
+      | none => expr (Expr.div e1 e2)
+  | lazy_zero i, expr e =>
+      match sp2_reduce i.expr e with
+      | some m => m
+      | none => expr (Expr.div i.expr e)
+  | expr e, lazy_zero i =>
+      match sp2_reduce e i.expr with
+      | some m => m
+      | none => expr (Expr.div e i.expr)
+  | a, b =>
+      unresolved (Expr.div (restoreExpr a) (restoreExpr b)) "unresolved_division"
 
 noncomputable def ricis_div (m1 m2 : Monolith) : Monolith :=
   match m1, m2 with
@@ -214,12 +243,14 @@ noncomputable def ricis_div (m1 m2 : Monolith) : Monolith :=
 
 noncomputable def ricis_mul (m1 m2 : Monolith) : Monolith :=
   match m1, m2 with
-  | lazy_zero idxF, lazy_inf idxG => value_expr_idx (Expr.mul idxF.expr idxG.expr) idxF
-  | lazy_inf idxF, lazy_zero idxG => value_expr_idx (Expr.mul idxF.expr idxG.expr) idxF
+  | lazy_zero iF, lazy_inf iG =>
+      value_expr_idx (Expr.mul iF.expr iG.expr) iF
+  | lazy_inf iF, lazy_zero iG =>
+      value_expr_idx (Expr.mul iF.expr iG.expr) iF
   | const v1, const v2 =>
-      let (idx, _) := Index.root RICISState.init (Expr.const v2) "const" SemanticType.arithmetic
-      if v1 = 0 then lazy_zero idx
-      else if v2 = 0 then lazy_zero idx
+      let (idx, _) := Index.root RICISState.init (Expr.const (v1 * v2)) "const" .arithmetic
+      if v1 = 0 then lazy_zero ⟨idx.identity, idx.instanceId, Expr.const v2, "0_F", .arithmetic⟩
+      else if v2 = 0 then lazy_zero ⟨idx.identity, idx.instanceId, Expr.const v1, "0_F", .arithmetic⟩
       else const (v1 * v2)
   | value_idx v1 i1, value_idx v2 i2 =>
       let (idx, _) := Index.combineMul RICISState.init i1 i2
@@ -237,23 +268,41 @@ end RICIS.Core
 
 open RICIS.Core
 
--- ТЕСТЫ (без #reduce для сложных выражений)
+theorem zero_div_same_identity (idx : Index) :
+    singular_div (lazy_zero idx) (lazy_zero idx) = const 1 := by
+  simp [singular_div, sp2_reduce, sp2_same, Index.sameIdentity, Identity.same]
+
 #reduce ricis_div (const 5) (const 0)
-#reduce ricis_div (lazy_zero ((Index.root RICISState.init (Expr.const 5) "f" SemanticType.arithmetic).fst)) (lazy_zero ((Index.root RICISState.init (Expr.const 5) "f" SemanticType.arithmetic).fst))
+
+#reduce singular_div
+  (lazy_zero (Index.root RICISState.init (Expr.const 5) "f" .arithmetic).fst)
+  (lazy_zero (Index.root RICISState.init (Expr.const 5) "f" .arithmetic).fst)
+
+def eF := Expr.sub Expr.var (Expr.const 2)
+def zF1 := (Index.root RICISState.init eF "x-2" .arithmetic).fst
+def zF2 := (Index.root RICISState.init eF "x-2_copy" .arithmetic).fst
+#reduce singular_div (lazy_zero zF1) (lazy_zero zF2)
+
+def eG := Expr.add Expr.var (Expr.const 2)
+def zG := (Index.root RICISState.init eG "x+2" .arithmetic).fst
+#reduce singular_div (lazy_zero zF1) (lazy_zero zG)
+
+#reduce ricis_mul (lazy_zero zF1) (lazy_inf zG)
 
 def z1 := makeZero RICISState.init "zero1"
 def z2 := makeZero z1.snd "zero2"
-def idx1 := match z1.fst with | lazy_zero idx => idx | _ => (Index.root RICISState.init (Expr.const 0) "dummy" SemanticType.arithmetic).fst
-def idx2 := match z2.fst with | lazy_zero idx => idx | _ => (Index.root RICISState.init (Expr.const 0) "dummy" SemanticType.arithmetic).fst
+def idx1 := match z1.fst with | lazy_zero i => i | _ => zF1
+def idx2 := match z2.fst with | lazy_zero i => i | _ => zF1
 #reduce idx1.identity.hash = idx2.identity.hash
 #reduce idx1.instanceId = idx2.instanceId
 
-def symbolicCoreVersion : String := "10.0.13"
+def symbolicCoreVersion : String := "10.1.0"
 def ricisSpecVersion : String := "7.7"
 def ricisDOI : String := "10.5281/zenodo.18116204"
 def ricisAuthor : String := "Dmitry Aleynikov"
 def ricisORCID : String := "0009-0004-3226-7700"
 def ricisLicense : String := "MIT"
-def coreStatus : String := "CORE VERIFIED — Identity = SemanticType + Normalize(Expr)"
+def coreStatus : String :=
+  "THEORY-FAITHFUL — SP2+SP3+A4: 0_F/0_G = 1 iff same Identity, else F/G"
 
 end
