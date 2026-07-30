@@ -1,39 +1,31 @@
-# RICIS-III Formal Kernel (v10.1.0)
+# RICIS-III Formal Kernel (v10.2.0)
 
-MIT License | Lean 4 | DOI: 10.5281/zenodo.18116204
+MIT | Lean 4 | DOI 10.5281/zenodo.18116204
 
-## Theory-faithful kernel (v7.7)
+**Identity = SemanticType + Normalize(Expr)** · no classical limits
 
-**Identity = SemanticType + Normalize(Expr)**
+## From Ricis.Core (C#)
 
-### Safety Protocols
+| C# | Lean |
+|----|------|
+| ExpressionSimplifierVisitor | `algSimplify` |
+| AlgebraicReductionVisitor | `sp2_reduce` + nested cancel |
+| ShouldCommute | `normalizeExpr` sorted ADD/MUL |
+| StandardOperations inf | `ricis_add` / `ricis_sub` (A7) |
+| 0_F x inf_G | `ricis_mul` (A6) |
+| inf/inf = F/G | `singular_div` (A5) |
 
-| SP | Rule | In code |
-|----|------|---------|
-| SP2 | Clean first | `sp2_reduce` |
-| SP3 | 0_F/0_G = F/G | identity check |
-| SP4 | Index by expression | `Index.expr` |
+## Axioms
 
-### Axioms
+- A4: 0_F/0_G = 1 iff same Identity, else F/G
+- A5: same for inf
+- A6: 0_F × ∞_G = F·G
+- A7: ∞_F ± ∞_G = ∞_{F±G}
 
-- **A4**: `0_F/0_G = 1` iff same Identity, else `F/G`
-- **A5**: same for ∞
-- **A6**: `0_F × ∞_G = F·G`
+## Theorem
 
-### Theorem
+`zero_div_same_identity` — singular_div (lazy_zero idx) (lazy_zero idx) = const 1
 
-```lean
-theorem zero_div_same_identity (idx : Index) :
-  singular_div (lazy_zero idx) (lazy_zero idx) = const 1
-```
-
-### Not any two zeros → 1
-
-```lean
-#reduce singular_div (lazy_zero z_{x-2}) (lazy_zero z_{x+2})
--- → expr (div (x-2) (x+2))
-```
-
-### Author
+## Author
 
 Dmitry Aleynikov · ORCID 0009-0004-3226-7700
