@@ -1,88 +1,54 @@
-RICIS-III Formal Kernel (v10.0.1)
-==================================
+# RICIS-III Formal Kernel (v10.0.13)
 
 MIT License | Lean 4 | DOI: 10.5281/zenodo.18116204
 
+## OVERVIEW
 
-OVERVIEW
-════════
+Machine-verified formal kernel of RICIS-III
+(Recursive Indexed Calculus of Identity and Singularity) in Lean 4.
 
-This repository contains the machine-verified formal kernel of RICIS-III
-(Recursive Indexed Calculus of Identity and Singularity), implemented in Lean 4.
+**Identity = SemanticType + Normalize(Expr)**
 
-RICIS-III provides an alternative constructive mathematical framework using
-indexed infinities (∞_F) and typed zeros (0_F), replacing classical limits
-with structural monolith matching at O(1).
+## CORE (v10.0.13)
 
+| Component | Description |
+|-----------|-------------|
+| Expr | AST (const, var, add, mul, sub, div) |
+| SemanticType | arithmetic \| field \| geometry \| topology \| singularity |
+| Identity | hash + canonical (normalizeExpr) |
+| InstanceCounter / RICISState | instance IDs |
+| Index | identity, instanceId, expr, name, semanticType |
+| Monolith | const, expr, expr_idx, value_idx, value_expr_idx, lazy_zero, lazy_inf, unresolved |
+| ricis_div / ricis_mul | classical_div + singular_div |
+| evalAll | Classical \| RICIS modes |
 
-CORE ARCHITECTURE
-═════════════════
+## KEY PROPERTY
 
-COMPONENT              DESCRIPTION
-─────────────────────  ──────────────────────────────────────────────────
-L0, L1                 Absolute Continuity & Identity (X = X)
-SP1–SP4                Safety Protocols preventing logical paradoxes
-A1–A10                 Core axioms for typed zeros and infinities
-Expr                   AST (const, var, add, mul, sub, div)
-Index                  Semantic context {expr, name}
-Monolith               Unified type: const | expr e | lazy_zero idx | lazy_inf idx
-sp2_reduce             Structural cancellation before evaluation
-sp4_index              Semantic indexing at point
-ricis_mul              A6: 0_F × ∞_G = F·G
-ricis_div              A4/A5: 0_F/0_G = F/G, ∞_F/∞_G = F/G
-ricis_sub              A7: ∞_F - ∞_G = ∞_{F-G}
+Same semantic identity (hash) can have different instanceIds:
 
+```lean
+#reduce idx1.identity.hash = idx2.identity.hash  -- true
+#reduce idx1.instanceId = idx2.instanceId        -- false
+```
 
-VERIFIED THEOREM
-════════════════
+## TESTS
 
-theorem ricis_zero_div_self_identity (idx : Index) : 
-  ricis_div (lazy_zero idx) (lazy_zero idx) = const 1 := by
-  unfold ricis_div; unfold sp2_reduce; simp
+```lean
+#reduce ricis_div (const 5) (const 0)
+#reduce ricis_div (lazy_zero ...) (lazy_zero ...)  -- → const 1
+```
 
-Meaning: 0_F / 0_F = 1 — proven structurally, without limits,
-without L'Hôpital, without series.
+## Build
 
+```bash
+git clone https://github.com/A1Dmitry/RICIS-III-Lean4-Kernel.git
+cd RICIS-III-Lean4-Kernel
+lean --make Ricis3.Release.lean
+```
 
-GETTING STARTED
-═══════════════
+## Author
 
-Prerequisites: Install Lean 4 via elan
-
-  curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh
-
-Build & Verify:
-
-  git clone https://github.com/A1Dmitry/RICIS-III-Lean4-Kernel.git
-  cd RICIS-III-Lean4-Kernel
-  lean --make Ricis3.Release.lean
-
-All 7 tests pass. Theorem compiles successfully.
-
-
-REPOSITORY STRUCTURE
-════════════════════
-
-  RICIS-III-Lean4-Kernel/
-  ├── Ricis3.Release.lean                    (278 lines, full kernel v10.0.1)
-  ├── ricis_zero_div_self_identity.lean      (standalone theorem)
-  ├── README.md
-  └── LICENSE
-
-
-REFERENCES
-══════════
-
-  RICIS-III Kernel (this repo)    10.5281/zenodo.18116204
-  RICIS-III Theory                10.5281/zenodo.21517353
-  RICIS Software                  10.5281/zenodo.21529989
-
-  Author:  Dmitry Aleynikov
-  ORCID:   0009-0004-3226-7700
-  Online:  https://remix-ricis-iii-501343051156.europe-west2.run.app
-
-
-LICENSE
-═══════
-
-MIT License. See LICENSE file for details.
+Dmitry Aleynikov  
+ORCID: 0009-0004-3226-7700  
+DOI: 10.5281/zenodo.18116204  
+License: MIT
