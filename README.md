@@ -1,6 +1,8 @@
 # RICIS-III Formal Kernel (v10.2.0)
 
 MIT | Lean 4 | DOI 10.5281/zenodo.18116204
+https://doi.org/10.5281/zenodo.18116204
+https://doi.org/10.5281/zenodo.21701242
 
 **Identity = SemanticType + Normalize(Expr)** · no classical limits
 
