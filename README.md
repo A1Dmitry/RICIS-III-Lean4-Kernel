@@ -1,131 +1,277 @@
 # RICIS-III Formal Kernel (v10.2.0)
 
-<!-- SEO Meta Tags -->
-<meta name="description" content="RICIS-III Formal Kernel v10.2.0 - Formal verification of calculus singularities in Lean 4. MIT licensed, DOI 10.5281/zenodo.18116204. Implements RICIS axioms A4-A7 for 0/0, ∞/∞, 0×∞, ∞±∞ with SP1-SP4 safety protocols.">
-<meta name="keywords" content="RICIS, formal verification, Lean 4, calculus, singularities, formal kernel, theorem proving, 0/0, infinity, mathematical logic, MIT license, DOI">
-<meta name="author" content="Dmitry Aleynikov">
-<meta name="robots" content="index, follow">
-<link rel="canonical" href="https://github.com/your-repo/RICIS-III">
+**MIT** · **Lean 4** · **DOI 10.5281/zenodo.18116204**
 
-<!-- Open Graph / Social Media -->
-<meta property="og:title" content="RICIS-III Formal Kernel v10.2.0">
-<meta property="og:description" content="Formal verification of calculus singularities in Lean 4. No classical limits. Identity = SemanticType + Normalize(Expr).">
-<meta property="og:type" content="article">
-<meta property="og:url" content="https://doi.org/10.5281/zenodo.18116204">
-<meta property="og:image" content="https://zenodo.org/badge/DOI/10.5281/zenodo.18116204.svg">
-
-<!-- Schema.org JSON-LD for Search Engines -->
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "SoftwareSourceCode",
-  "name": "RICIS-III Formal Kernel",
-  "version": "10.2.0",
-  "description": "Formal verification of calculus singularities in Lean 4. Implements RICIS axioms for 0/0, ∞/∞, 0×∞, ∞±∞ with safety protocols.",
-  "programmingLanguage": "Lean 4",
-  "license": "MIT",
-  "author": {
-    "@type": "Person",
-    "name": "Dmitry Aleynikov",
-    "sameAs": "https://orcid.org/0009-0004-3226-7700"
-  },
-  "identifier": {
-    "@type": "PropertyValue",
-    "propertyID": "DOI",
-    "value": "10.5281/zenodo.18116204"
-  },
-  "codeRepository": "https://doi.org/10.5281/zenodo.18116204",
-  "keywords": ["RICIS", "formal verification", "Lean 4", "calculus", "singularities", "theorem proving", "0/0", "infinity", "mathematical logic"]
-}
-</script>
--->
-
----
-
-**MIT** · **Lean 4** · **DOI 10.5281/zenodo.18116204**  
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18116204.svg)](https://doi.org/10.5281/zenodo.18116204)  
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18116204.svg)](https://doi.org/10.5281/zenodo.18116204)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21701242.svg)](https://doi.org/10.5281/zenodo.21701242)
 
 ---
 
-## 📌 Key Features
-- **Identity = SemanticType + Normalize(Expr)** · no classical limits
-- Formal verification of calculus singularities in Lean 4
-- Implements RICIS axioms A4-A7 for:
-  - `0_F/0_G` (A4)
-  - `∞_F/∞_G` (A5)
-  - `0_F × ∞_G` (A6)
-  - `∞_F ± ∞_G` (A7)
-- **SP1-SP4 Safety Protocols**:
-  - SP1: No total amnesia for 0/0
-  - SP2: Algebraic simplification before singularity evaluation
-  - SP3: Index law for zeros: `0_F/0_G = F/G`
-  - SP4: Semantic indexing by expression, not numerical value
-- **TypeConsistencyProtocol** for heterogeneous types
-- **Fractal Law**: `R(Q) = {Q, T(Q), ∞_Q, 0_Q, R(∞_Q), R(0_Q)}`
-- **O(1) exact evaluation** replacing limits
+# RICIS-III Formal Kernel
+
+Formalization of the **Recursive Indexed Calculus of Identity and Singularity (RICIS-III)** in **Lean 4**.
+
+The project provides a machine-checked implementation of the RICIS axiomatic system together with formally verified theorems derived from those axioms.
+
+Unlike classical analysis, RICIS evaluates singular expressions symbolically using semantic identities instead of limit computations.
 
 ---
 
-## 🏷️ Quick Reference
-- **License**: MIT
-- **Language**: Lean 4
-- **DOI**: [10.5281/zenodo.18116204](https://doi.org/10.5281/zenodo.18116204)
-- **Author**: Dmitry Aleynikov ([ORCID 0009-0004-3226-7700](https://orcid.org/0009-0004-3226-7700))
-- **Status**: ✓ 100% consistent with RICIS_Unified_Complete_Document v7.7
+# Key Features
+
+• Identity = SemanticType + Normalize(Expression)
+
+• No classical limits
+
+• Machine-checked proofs in Lean 4
+
+• Formal implementation of RICIS axioms:
+
+  • A4 — 0_F / 0_G
+
+  • A5 — ∞_F / ∞_G
+
+  • A6 — 0_F × ∞_G
+
+  • A7 — ∞_F ± ∞_G
+
+• SP1–SP4 Safety Protocols
+
+• TypeConsistencyProtocol
+
+• Recursive Fractal Law
+
+• Constant-time symbolic evaluation of singular forms
 
 ---
 
-## 🔬 From Ricis.Core (C#)
+# Safety Protocols
 
-| C# | Lean |
-|----|------|
+### SP1 — No Total Amnesia
+
+Information contained in singularities is preserved.
+
+### SP2 — Algebraic Reduction First
+
+Expressions are simplified before singularity evaluation.
+
+### SP3 — Index Law
+
+0_F / 0_G = F / G
+
+unless both semantic identities are identical.
+
+### SP4 — Semantic Identity
+
+Identity depends on
+
+SemanticType + Normalize(Expression)
+
+instead of numerical value.
+
+---
+
+# RICIS Axioms
+
+### A4 — Zero Division
+
+0_F / 0_G =
+
+• 1  if Identity(F) = Identity(G)
+
+• F / G otherwise
+
+---
+
+### A5 — Infinity Division
+
+∞_F / ∞_G =
+
+• 1  if Identity(F) = Identity(G)
+
+• F / G otherwise
+
+---
+
+### A6 — Zero–Infinity Multiplication
+
+0_F × ∞_G = F · G
+
+---
+
+### A7 — Infinity Arithmetic
+
+∞_F ± ∞_G = ∞_(F ± G)
+
+---
+
+# Recursive Fractal Law
+
+R(Q) =
+
+{
+    Q,
+    T(Q),
+    ∞_Q,
+    0_Q,
+    R(∞_Q),
+    R(0_Q)
+}
+
+Recursive closure of semantic objects under singularity generation.
+
+---
+
+# Architecture
+
+```
+           Parser
+              │
+              ▼
+      Expression Tree
+              │
+              ▼
+     Algebraic Reduction
+          (SP2)
+              │
+              ▼
+   Semantic Normalization
+              │
+              ▼
+     Identity Construction
+              │
+              ▼
+      SP1 • SP3 • SP4
+              │
+              ▼
+      RICIS Axioms
+      (A4–A7)
+              │
+              ▼
+      Lean Proof Kernel
+```
+
+---
+
+# Mapping from Ricis.Core (C#)
+
+| Ricis.Core | Lean 4 |
+|------------|---------|
 | ExpressionSimplifierVisitor | `algSimplify` |
-| AlgebraicReductionVisitor | `sp2_reduce` + nested cancel |
-| ShouldCommute | `normalizeExpr` sorted ADD/MUL |
-| StandardOperations inf | `ricis_add` / `ricis_sub` (A7) |
-| 0_F x inf_G | `ricis_mul` (A6) |
-| inf/inf = F/G | `singular_div` (A5) |
+| AlgebraicReductionVisitor | `sp2_reduce` |
+| ShouldCommute | `normalizeExpr` |
+| StandardOperations (∞ ± ∞) | `ricis_add` / `ricis_sub` |
+| 0_F × ∞_G | `ricis_mul` |
+| ∞_F / ∞_G | `singular_div` |
 
 ---
 
-## 📜 Axioms (A4-A7)
+# Example Verified Theorem
 
-- **A4**: `0_F/0_G = 1` iff same Identity, else `F/G`
-- **A5**: Same for `∞_F/∞_G`
-- **A6**: `0_F × ∞_G = F·G`
-- **A7**: `∞_F ± ∞_G = ∞_{F±G}`
+```lean
+theorem zero_div_same_identity :
+  singular_div (lazy_zero idx) (lazy_zero idx) = const 1
+```
 
----
-
-## 🧪 Proven Theorem
-`zero_div_same_identity` —  
-`singular_div (lazy_zero idx) (lazy_zero idx) = const 1`
+This theorem is mechanically verified by the Lean 4 proof kernel.
 
 ---
 
-## 👤 Author
-**Dmitry Aleynikov** · Minsk, Belarus  
-[ORCID 0009-0004-3226-7700](https://orcid.org/0009-0004-3226-7700)
+# Build
+
+```bash
+lake update
+lake build
+```
 
 ---
 
-## 📚 Keywords for Search Indexing
-`RICIS`, `formal verification`, `Lean 4`, `calculus`, `singularities`, `formal kernel`, `theorem proving`, `0/0`, `infinity`, `mathematical logic`, `MIT license`, `DOI`, `zenodo`, `type theory`, `axiomatic system`, `safety protocols`
+# Project Information
+
+**Language**
+
+Lean 4
+
+**License**
+
+MIT
+
+**Author**
+
+Dmitry Aleynikov
+
+**ORCID**
+
+https://orcid.org/0009-0004-3226-7700
+
+**Primary DOI**
+
+https://doi.org/10.5281/zenodo.18116204
+
+**Formal Kernel DOI**
+
+https://doi.org/10.5281/zenodo.21701242
 
 ---
 
-## 🌐 Related Resources
-- [Zenodo DOI](https://doi.org/10.5281/zenodo.18116204)
-- [ORCID](https://orcid.org/0009-0004-3226-7700)
-- [RICIS Documentation (v7.7)](https://github.com/your-repo/RICIS-III)
+# Keywords
+
+RICIS
+
+Formal Verification
+
+Lean 4
+
+Theorem Proving
+
+Calculus
+
+Singularity
+
+Semantic Identity
+
+Formal Kernel
+
+Type Theory
+
+Recursive Calculus
+
+Indexed Zero
+
+Indexed Infinity
+
+Machine-Checked Mathematics
 
 ---
 
-**⚠️ Note**: This is a formal kernel for theorem proving in Lean 4. For full RICIS specification, see the accompanying documentation.
+# Related Resources
 
-<!--
-  RICIS-III Formal Kernel v10.2.0
-  Copyright (c) 2026 Dmitry Aleynikov
-  MIT License
--->
+• Zenodo DOI
+
+https://doi.org/10.5281/zenodo.18116204
+
+• Formal Kernel DOI
+
+https://doi.org/10.5281/zenodo.21701242
+
+• ORCID
+
+https://orcid.org/0009-0004-3226-7700
+
+• GitHub Repository
+
+https://github.com/A1Dmitry/RICIS-III-Lean4-Kernel
+
+---
+
+# Status
+
+Current release: **v10.2.0**
+
+The implementation is intended to formalize the RICIS-III axiomatic system in Lean 4 and to provide machine-checked proofs derived from those axioms.
+
+---
+
+© 2026 Dmitry Aleynikov
+
+Released under the MIT License.
